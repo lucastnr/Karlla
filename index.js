@@ -1,6 +1,11 @@
 const fs = require('fs');
 const discord = require('discord.js');
 
+const play = require('./on-message-commands/play')
+const skip = require('./on-message-commands/skip')
+
+const getUser = require('./services/get-user')
+
 const client = new discord.Client({ disableMentions: 'everyone' });
 
 const { Player } = require('discord-player');
@@ -11,14 +16,27 @@ client.emotes = client.config.emojis;
 client.filters = client.config.filters;
 client.commands = new discord.Collection();
 
-client.on('message', function(message) {
-    if(message.content.includes(';play')) {
-        const arg = message.content.substring(6);
-        message.guild.members.fetch('325765727548342282').then(value => {
-            message.author = value;
-            client.player.play(message, arg, { firstResult: true });
-        });
+client.on('message', async (message) => {
+    const content = message.content;
+
+    if (!message.author.bot) return;
+
+    
+    if (content.includes('#play')) {
+        message.author = await getUser(message, 'play');
+        return await play(message, client);
     }
+    
+    else if (content.includes('#skip')) {
+        message.author = await getUser(message, 'skip');
+        return await skip(message, client);
+    }
+
+    else if (content.includes('#stop')) {
+        message.author = await getUser(message, 'stop');
+        return await skip(message, client);
+    }
+
 });
 
 fs.readdirSync('./commands').forEach(dirs => {
